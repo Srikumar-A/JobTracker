@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorization Successful</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0a0a0b;
+            color: #e4e4e7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .card {
+            text-align: center;
+            padding: 3rem;
+        }
+        .checkmark {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1.5rem;
+            border-radius: 50%;
+            background: rgba(34, 197, 94, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pop 0.3s ease;
+        }
+        .checkmark svg { width: 32px; height: 32px; }
+        h1 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+        p { color: #71717a; font-size: 0.875rem; }
+        @keyframes pop {
+            0% { transform: scale(0); }
+            80% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="checkmark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+        <h1>Authorization Successful</h1>
+        <p>Redirecting you back...</p>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.hash.substring(1));
+        const token = params.get("access_token");
+
+        if (token && window.opener) {
+            window.opener.postMessage({ type: "google-auth", token: token }, "*");
+            setTimeout(() => window.close(), 1000);
+        } else if (token && !window.opener) {
+            sessionStorage.setItem("access_token", token);
+            window.location.href = "/index.html";
+        } else {
+            document.querySelector("h1").textContent = "Authorization Failed";
+            document.querySelector("p").textContent = "No token received. Close this window and try again.";
+            document.querySelector(".checkmark").innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>`;
+            document.querySelector(".checkmark").style.background = "rgba(239, 68, 68, 0.1)";
+        }
+    </script>
+</body>
+</html>

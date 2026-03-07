@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Job Tracker</title>
+        <link rel="stylesheet" href="styles.css" />
+        <script type ="module" src="scriptsJS.js"></script>
+    </head>
+    <body>
+        <!--LOGIN-->
+        <div class="login-screen" id="login-screen">
+            <h2>Login to Job Tracker</h2>
+            <div>Your Automated job tracking profile based on your emails, the application doesnt store your emails, but only seeks for emails that is relevant to job applications.
+                <br/>
+                The market is tough, its better to be orgnized than scattered.
+            </div>
+            <button id="google-login-btn">Login with Google</button>
+        </div>
+
+        <!--Dashboard-->
+        <div class="job-dashboard" id="job-dashboard">
+            <div class="title-name">Your Job Dashboard</div>
+            
+            <!--Header of the dashboard-->
+            <div class="job-application-row">
+                <div class="job-application-cell">Company</div>
+                <div class="job-application-cell">Position</div>
+                <div class="job-application-cell">Status</div>
+                <div class="job-application-cell">Applied On</div> 
+            </div>
+
+            <!--Job Applications-->
+            <div class="job-applications">
+            </div>
+        </div>
+    </body>
+</html>
