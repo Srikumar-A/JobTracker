@@ -42,7 +42,7 @@ document.getElementById("google-login-btn").addEventListener("click",()=>{
 
 //------------------State------------------//
 async function fetchEmails(token){
-    const res=await fetch(`${API_BASE_URL}get-email-list`,{
+    const res=await fetch(`${API_BASE_URL}job-applications`,{
         headers:{ Authorization:`Bearer ${token}`}
     });
     const data=await res.json();
