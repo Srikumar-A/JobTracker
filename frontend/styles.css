@@ -1,0 +1,311 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background: #09090b;
+    color: #e4e4e7;
+    min-height: 100vh;
+}
+
+.login-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle glow behind the card */
+.login-screen::before {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.login-screen h2 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.25rem;
+    background: linear-gradient(135deg, #e4e4e7 0%, #a1a1aa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: fadeDown 0.6s ease;
+}
+
+.login-screen div {
+    max-width: 420px;
+    text-align: center;
+    color: #71717a;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    font-weight: 300;
+    margin-bottom: 2.5rem;
+    animation: fadeDown 0.6s ease 0.1s backwards;
+}
+
+#google-login-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 36px;
+    background: #18181b;
+    border: 1px solid #27272a;
+    border-radius: 10px;
+    color: #e4e4e7;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    animation: fadeDown 0.6s ease 0.2s backwards;
+}
+
+#google-login-btn:hover {
+    border-color: #3b82f6;
+    background: #1c1c22;
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.1),
+                0 0 0 1px rgba(59, 130, 246, 0.15);
+    transform: translateY(-1px);
+}
+
+#google-login-btn:active {
+    transform: translateY(0);
+}
+
+@keyframes fadeDown {
+    from {
+        opacity: 0;
+        transform: translateY(-12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.job-dashboard {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+    animation: fadeDown 0.5s ease;
+}
+
+.title-name {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #e4e4e7 0%, #a1a1aa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+#logoutBtn {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    padding: 8px 18px;
+    background: transparent;
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    color: #71717a;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#logoutBtn:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+/* ── STAT CARDS ─────────────────────── */
+
+.cards-aggregates {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+}
+
+.card-indi {
+    background: #141416;
+    border: 1px solid #27272a;
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    animation: fadeDown 0.5s ease backwards;
+}
+
+.card-indi:nth-child(1) { animation-delay: 0.05s; }
+.card-indi:nth-child(2) { animation-delay: 0.1s; }
+.card-indi:nth-child(3) { animation-delay: 0.15s; }
+
+/* Top accent bar */
+.card-indi:nth-child(1)::before,
+.card-indi:nth-child(2)::before,
+.card-indi:nth-child(3)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+}
+
+.card-indi:nth-child(1)::before { background: #3b82f6; }  /* blue — applied */
+.card-indi:nth-child(2)::before { background: #ef4444; }  /* red — rejected */
+.card-indi:nth-child(3)::before { background: #22c55e; }  /* green — interview/offer */
+
+.card-indi h1 {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #71717a;
+    font-weight: 400;
+    margin-bottom: 0.75rem;
+}
+
+.value-card {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #e4e4e7;
+}
+
+/* ── TABLE ──────────────────────────── */
+
+.job-application-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1.5fr 1fr 1fr;
+    padding: 12px 20px;
+    background: #141416;
+    border: 1px solid #27272a;
+    border-radius: 10px 10px 0 0;
+}
+
+.job-application-row .job-application-cell {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #52525b;
+    font-weight: 500;
+}
+
+.job-applications {
+    border: 1px solid #27272a;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    overflow: hidden;
+}
+
+/* ── INDIVIDUAL ROW (each record) ──── */
+
+.job-application-entry {
+    display: grid;
+    grid-template-columns: 1.5fr 1.5fr 1fr 1fr;
+    padding: 14px 20px;
+    border-bottom: 1px solid #1c1c1f;
+    transition: background 0.15s;
+}
+
+.job-application-entry:last-child {
+    border-bottom: none;
+}
+
+.job-application-entry:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.job-application-entry .company {
+    font-weight: 600;
+    color: #e4e4e7;
+    font-size: 0.9rem;
+}
+
+.job-application-entry .position {
+    color: #a1a1aa;
+    font-size: 0.875rem;
+}
+
+.job-application-entry .date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: #52525b;
+}
+
+/* ── STATUS BADGES ──────────────────── */
+
+.status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-badge.applied {
+    background: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+}
+
+.status-badge.interview {
+    background: rgba(168, 85, 247, 0.12);
+    color: #c084fc;
+}
+
+.status-badge.assessment {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+}
+
+.status-badge.offer {
+    background: rgba(34, 197, 94, 0.12);
+    color: #4ade80;
+}
+
+.status-badge.rejected {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+}
+
+/* ── EMPTY STATE ────────────────────── */
+
+.empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+    color: #3f3f46;
+    font-size: 0.9rem;
+}
+
+/* ── RESPONSIVE ─────────────────────── */
+
+@media (max-width: 640px) {
+    .cards-aggregates {
+        grid-template-columns: 1fr;
+    }
+    .job-application-row,
+    .job-application-entry {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+}

@@ -12,15 +12,18 @@ import base64
 import httpx
 # supabase postgress for backend
 from supabase import create_client
+from email.utils import parsedate_to_datetime
+
+
+
+load_dotenv()
+base_url = os.getenv("BASE_URL")
+userId='me'
 
 #supabase client setup
 SUPABASE_URL=os.getenv("SUPABASE_URL")
 SUPABASE_KEY=os.getenv("SUPABASE_KEY")
 db=create_client(SUPABASE_URL,SUPABASE_KEY)
-
-load_dotenv()
-base_url = os.getenv("BASE_URL")
-userId='me'
 
 app=FastAPI()
 
@@ -42,6 +45,7 @@ status_dict={
     "selected":1,
     "rejected":3,
     "unsuccessful":3,
+    "unknown":0
 
 }
 company_name_patterns=[
@@ -79,6 +83,26 @@ def is_job_application(text,layer):
         return True
     return False
 
+def extract_body(payload):
+
+    data=payload.get("body",{}).get("data","")
+    if data and payload.get("mimeType")=="text/plain":
+        return base64.urlsafe_b64decode(data).decode("utf-8", errors="ignore")
+    
+    for part in payload.get("parts",[]):
+        result=extract_body(part)
+        if result:
+            return result
+    if data and payload.get("mimeType") == "text/html":
+        return base64.urlsafe_b64decode(data).decode("utf-8", errors="ignore")
+    
+    for part in payload.get("parts", []):
+        data = part.get("body", {}).get("data", "")
+        if data and part.get("mimeType") == "text/html":
+            return base64.urlsafe_b64decode(data).decode("utf-8", errors="ignore")
+    
+    return ""
+
 @app.get("/get-email-list")
 async def get_email_list(request:Request):
     token=request.headers.get("Authorization")
@@ -86,8 +110,23 @@ async def get_email_list(request:Request):
                           headers={"Authorization": token})
     return response.json()
 
-@app.get("/job-applications")
-async def get_job_applications(request:Request):
+async def get_user_id(token)->str:
+    async with httpx.AsyncClient() as client:
+        response=await client.get("https://www.googleapis.com/oauth2/v2/userinfo",
+                                  headers={"Authorization": token})
+        if response.status_code==200:
+            return response.json().get("id")
+    return None
+
+@app.get("/get-applications")
+async def get_applications(request:Request):
+    token=request.headers.get("Authorization")
+    user_id=await get_user_id(token)
+    my_jobs=db.table("job_applications").select("company","date","role","status").eq("user_id",user_id).execute()
+    return {"applications":my_jobs.data}
+
+@app.get("/process-applications")
+async def process_job_applications(request:Request):
     token=request.headers.get("Authorization")
     response=requests.get(base_url + "/gmail/v1/users/me/messages",
                           headers={"Authorization": token})
@@ -110,15 +149,19 @@ async def get_job_applications(request:Request):
                 sender=headers[i].get("value")
             elif headers[i].get("name")=="Date":
                 date=headers[i].get("value")
-        body=msg_response.json().get("payload", {}).get("body", {}).get("data", "")
-        body=base64.urlsafe_b64decode(body).decode("utf-8",errors="ignore")
+                date=parsedate_to_datetime(date).isoformat()
+
+        
+
+        body=extract_body(msg_response.json().get("payload",{}))
 
         #check if already seen
         already_seen=(
             db.table('user_chkpts').
             select("*").
             eq("user_id",user_id).
-            gt("last_timestamp",date)
+            gt("last_timestamp",date).
+            execute()
         )
         if already_seen.data:
             continue
@@ -130,14 +173,19 @@ async def get_job_applications(request:Request):
             "date":date,
             "status":"",
             "company":"",
-            "role":""
+            "role":"",
+            "user_id":"",
+            "mail_id":""
         }
+        
         if is_job_application(subject,layer1_keys):
             #check for status of the application and retrieve company name
+            print(body)
             if is_job_application(body,layer2_keys):
                 
                 #status classification
-                status=re.search(r'\b(' + '|'.join(layer2_keys) + r')\b', body).group(0)
+                match = re.search(r'\b(' + '|'.join(layer2_keys) + r')\b', body)
+                status = match.group(0) if match else "unknown"
                 status=status_list[status_dict.get(status,0)]
                 # comapany name extraction
                 company=""
@@ -156,47 +204,48 @@ async def get_job_applications(request:Request):
                 record["status"]=status
                 record["company"]=company
                 record["role"]=role
+                # store it in database
+                record["user_id"]=user_id
+                record["mail_id"]=msg_id
+                print(record)
+                print(subject)
+                # insert into supabase
+                #check if the record of the application exists
+                existing_rec=(
+                    db.table("job_applications").
+                    select("user_id","mail_id").
+                    eq("user_id",user_id).
+                    eq("company",record.get("company")).
+                    eq("role",record.get("role")).
+                    execute()
+                )
+                # adding data based on existing record
+                if existing_rec.data:
+                    db.table("job_applications").update({"status":record.get("status")}).eq("user_id",record.get("user_id")).eq("company",record.get("company")).eq("role",record.get("role")).execute()
+                else:
+                    db.table("job_applications").insert(record).execute()
+
+                #update the user_chkpt, the condition already checked above
+                #check if the user is loggin in for the first time
+                user_exists=db.table("user_chkpts").select("*").eq("user_id",record.get("user_id")).execute()
+                if user_exists.data:
+                    db.table("user_chkpts").update({"mail_id":record.get("mail_id"),"last_timestamp":date}).eq("user_id",record.get("user_id")).execute()
+                else:
+                    db.table("user_chkpts").insert({"user_id":record.get("user_id"),"mail_id":record.get("mail_id"),"last_timestamp":record.get("date")}).execute()
             else:
                
                 flag_check=True
         else:
             flag_check=True
         if flag_check:
-            # LLM based parsing
+            # LLM based parsing1
             pass
 
-        # store it in database
-        record["user_id"]=user_id
-        record["mail_id"]=msg_id
-
-        # insert into supabase
-        #check if the record of the application exists
-        existing_rec=(
-            db.table("job_applications").
-            select("user_id","mail_id").
-            eq("user_id",record.user_id).
-            eq("company",record.company).
-            eq("role",record.role).
-            execute()
-        )
-        # adding data based on existing record
-        if existing_rec.data:
-            db.table("job_applications").update({"status":record.status}).eq("user_id",record.user_id).eq("company",record.company).eq("role",record.role).execute()
-        else:
-            db.table("job_applications").insert(record).execute()
         
-        #update the user_chkpt, the condition already checked above
-        db.table("user_chkpt").update({"maid_id":record.mail_id,"last_timestamp":date}).eq("user_id",record.user_id).execute()
 
     return msg_response.json()
 
-async def get_user_id(token)->str:
-    async with httpx.AsyncClient() as client:
-        response=await client.get("https://www.googleapis.com/oauth2/v2/userinfo",
-                                  headers={"Authorization": f"Bearer {token}"})
-        if response.status_code==200:
-            return response.json().get("id")
-        return None
+
 
 
 if __name__=="__main__":
