@@ -14,11 +14,21 @@ import httpx
 from supabase import create_client
 from email.utils import parsedate_to_datetime
 
+#llm
+from openai import AsyncOpenAI
+import json
+
 
 
 load_dotenv()
 base_url = os.getenv("BASE_URL")
 userId='me'
+
+# openai setup
+client=AsyncOpenAI(
+    api_key=os.getenv("OPENAI_KEY"),
+    base_url="https://openrouter.ai/api/v1"
+)
 
 #supabase client setup
 SUPABASE_URL=os.getenv("SUPABASE_URL")
@@ -82,6 +92,79 @@ def is_job_application(text,layer):
     if re.search(r'\b(' + '|'.join(layer) + r')\b', text):
         return True
     return False
+async def LLM_JobParser(sub,body):
+    system_prompt='''
+            You are an information extraction system that processes email content and identifies whether the email is related to a job application.
+
+            The user will provide the subject and body of an email.
+
+            Your task is to:
+            1. Determine if the email is related to a job application or hiring process.
+            2. Extract relevant information if available.
+
+            A job application email includes (but is not limited to):
+            - Job application confirmations
+            - Interview invitations
+            - Interview scheduling
+            - Coding assessments
+            - Hiring process updates
+            - Rejections
+            - Offers
+            - Recruiter outreach regarding a role
+
+            If the email is unrelated to job applications, set:
+            "is_job_application": false
+
+            Extraction rules:
+                - sender: leave as an empty string ("") because it will be filled by the system outside the LLM.
+                - date: leave as an empty string ("") because it will be filled by the system outside the LLM.
+                - user_id: leave as an empty string ("")
+                - mail_id: leave as an empty string ("")
+
+                - status: classify the stage of the job process if applicable. Possible values include:
+                    "applied"
+                    "submitted"
+                    "assessment"
+                    "interview"
+                    "interview"
+                    "rejected"
+                    "offer"
+                    "unknown"
+
+                - company: extract the company or organization name mentioned in the email. If not identifiable, return "".
+
+            - role: extract the job title mentioned in the email. If not identifiable, return "".
+
+            Output rules:
+                - Return ONLY valid JSON.
+                - Do NOT include explanations.
+                - Do NOT include markdown.
+                - Do NOT include extra text.
+                - Follow the schema exactly.
+
+                Output schema:
+
+                {
+                "status": "",
+                "company": "",
+                "role": "",
+                "is_job_application": false
+            }   
+            '''
+    resp=await client.chat.completions.create(
+        model='arcee-ai/trinity-large-preview:free',
+        messages=[
+            {"role":"system",
+             "content":system_prompt},
+             {"role":"user",
+              "content":"subject: "+sub+" body: "+body}
+        ],
+        max_tokens=200,
+        temperature=0,
+        response_format={"type":"json_object"}
+    )
+
+    return json.loads(resp.choices[0].message.content)
 
 def extract_body(payload):
 
@@ -180,7 +263,6 @@ async def process_job_applications(request:Request):
         
         if is_job_application(subject,layer1_keys):
             #check for status of the application and retrieve company name
-            print(body)
             if is_job_application(body,layer2_keys):
                 
                 #status classification
@@ -207,8 +289,7 @@ async def process_job_applications(request:Request):
                 # store it in database
                 record["user_id"]=user_id
                 record["mail_id"]=msg_id
-                print(record)
-                print(subject)
+                print(msg_id,"------>regex")
                 # insert into supabase
                 #check if the record of the application exists
                 existing_rec=(
@@ -232,6 +313,9 @@ async def process_job_applications(request:Request):
                     db.table("user_chkpts").update({"mail_id":record.get("mail_id"),"last_timestamp":date}).eq("user_id",record.get("user_id")).execute()
                 else:
                     db.table("user_chkpts").insert({"user_id":record.get("user_id"),"mail_id":record.get("mail_id"),"last_timestamp":record.get("date")}).execute()
+                # add to dataset
+                # dataset for nlp based model
+                db.table("dataset").insert({"subject":subject,"body":body,"target":record.get("status")}).execute()
             else:
                
                 flag_check=True
@@ -239,7 +323,45 @@ async def process_job_applications(request:Request):
             flag_check=True
         if flag_check:
             # LLM based parsing1
-            pass
+            part_record=await LLM_JobParser(subject,body)
+            record={
+                "company":part_record.get("company"),
+                "sender":sender,
+                "date":date,
+                "status":status_list[part_record.get("status",0)],
+                "role":part_record.get("role"),
+                "user_id":user_id,
+                "mail_id":msg_id,
+            }
+            if part_record.get("is_job_application"):
+                print(msg_id,"------->llm")
+                existing_rec=(
+                        db.table("job_applications").
+                        select("user_id","mail_id").
+                        eq("user_id",user_id).
+                        eq("company",record.get("company")).
+                        eq("role",record.get("role")).
+                        execute()
+                    )
+            
+                # adding data based on existing record
+                if existing_rec.data:
+                    db.table("job_applications").update({"status":record.get("status")}).eq("user_id",record.get("user_id")).eq("company",record.get("company")).eq("role",record.get("role")).execute()
+                else:
+                    db.table("job_applications").insert(record).execute()
+
+                #update the user_chkpt, the condition already checked above
+                #check if the user is loggin in for the first time
+                user_exists=db.table("user_chkpts").select("*").eq("user_id",record.get("user_id")).execute()
+                if user_exists.data:
+                    db.table("user_chkpts").update({"mail_id":record.get("mail_id"),"last_timestamp":date}).eq("user_id",record.get("user_id")).execute()
+                else:
+                    db.table("user_chkpts").insert({"user_id":record.get("user_id"),"mail_id":record.get("mail_id"),"last_timestamp":record.get("date")}).execute()
+
+                # dataset for nlp based model
+                db.table("dataset").insert({"subject":subject,"body":body,"target":record.get("status")}).execute()
+
+
 
         
 

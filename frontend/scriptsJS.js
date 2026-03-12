@@ -23,7 +23,6 @@ document.getElementById("google-login-btn").addEventListener("click",()=>{
             document.getElementById("login-screen").style.display="none";
             document.getElementById("job-dashboard").style.display="block";
             sessionStorage.setItem("user",token);
-            console.log(token);
             fetchApplications(token);
         };
     });
@@ -42,10 +41,12 @@ document.getElementById("google-login-btn").addEventListener("click",()=>{
 
 //------------------State------------------//
 async function fetchEmails(token){
+    showLoading();
     const res=await fetch(`${API_BASE_URL}process-applications`,{
         headers:{ Authorization:`Bearer ${token}`}
     });
     const data=await res.json();
+    hideLoading();
 }
 
 async function fetchApplications(token){
@@ -77,7 +78,7 @@ async function fetchApplications(token){
     const apps = data.applications;
     document.querySelector(".card-indi:nth-child(1) .value-card").textContent = apps.length;
     document.querySelector(".card-indi:nth-child(2) .value-card").textContent = apps.filter(a => a.status === "Rejected").length;
-    document.querySelector(".card-indi:nth-child(3) .value-card").textContent = apps.filter(a => ["Interview", "Offer", "Assessment"].includes(a.status)).length;
+    document.querySelector(".card-indi:nth-child(3) .value-card").textContent = apps.filter(a => ["interview", "offer", "assessment"].includes(a.status)).length;
 }
 
 //------------------Functions------------------//\
@@ -85,3 +86,14 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
     sessionStorage.clear();
     window.location.reload();
 });
+function showLoading(){
+    document.getElementById("loadingOverlay").classList.add("active");
+}
+function hideLoading(){
+    document.getElementById("loadingOverlay").classList.remove("active");
+}
+document.getElementById("refreshBtn").addEventListener("click",()=>{
+    const token=sessionStorage.getItem("user");
+    fetchEmails(token);
+    fetchApplications(token);
+})

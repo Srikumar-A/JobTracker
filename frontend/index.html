@@ -21,6 +21,7 @@
         <!--Dashboard-->
         <div class="job-dashboard" id="job-dashboard" style="display:none;">
             <div class="title-name">Your Job Dashboard</div>
+            <button id="refreshBtn">Refresh</button>
             <button id="logoutBtn">Logout</button>
             <div class="cards-aggregates">
                 <div class="card-indi">
@@ -46,6 +47,12 @@
 
             <!--Job Applications-->
             <div class="job-applications">
+            </div>
+        </div>
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-modal">
+                <div class="spinner"></div>
+                <p>Processing your emails...</p>
             </div>
         </div>
     </body>
