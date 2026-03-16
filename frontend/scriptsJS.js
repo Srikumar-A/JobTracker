@@ -40,6 +40,8 @@ document.getElementById("google-login-btn").addEventListener("click",()=>{
 });
 
 //------------------State------------------//
+
+// processing emails
 async function fetchEmails(token){
     showLoading();
     const res=await fetch(`${API_BASE_URL}process-applications`,{
@@ -48,6 +50,7 @@ async function fetchEmails(token){
     const data=await res.json();
     hideLoading();
 }
+
 
 async function fetchApplications(token){
     const res = await fetch(`${API_BASE_URL}get-applications`,{
@@ -71,6 +74,7 @@ async function fetchApplications(token){
             <div><span class="status-badge ${(app.status || "").toLowerCase()}">${app.status || "Unknown"}</span></div>
             <div class="date">${app.date ? app.date.split("T")[0] : "—"}</div>
         `;
+        entry.addEventListener("click",()=>openEditModal(app));
         container.appendChild(entry);
     });
 
@@ -80,6 +84,51 @@ async function fetchApplications(token){
     document.querySelector(".card-indi:nth-child(2) .value-card").textContent = apps.filter(a => a.status === "Rejected").length;
     document.querySelector(".card-indi:nth-child(3) .value-card").textContent = apps.filter(a => ["interview", "offer", "assessment"].includes(a.status)).length;
 }
+//modal view for crud
+function openEditModal(app){
+    document.getElementById("editId").value=app.mail_id;
+    document.getElementById("editCompany").value=app.company ||"";
+    document.getElementById("editRole").value=app.role || "";
+    document.getElementById("editStatus").value=app.status || "applied";
+    document.getElementById("crudRow").classList.add("active");
+
+}
+//cancel button
+document.getElementById('cancelEdit').addEventListener("click",()=>{
+    document.getElementById("crudRow").classList.remove("active");
+});
+// save changes
+document.getElementById("saveEdit").addEventListener("click",async ()=>{
+    const id=document.getElementById("editId").value;
+    const updated={
+        company:document.getElementById("editCompany").value,
+        role:document.getElementById("editRole").value,
+        status:document.getElementById("editStatus").value
+    };
+    const token=sessionStorage.getItem("user");
+    await fetch(`${CONFIG.API_BASE_URL}update-application/${id}`,{
+        method:"PUT",
+        headers:{
+            "Authorization":`Bearer ${token}`,
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify(updated)
+    });
+    document.getElementById("crudRow").classList.remove("active");
+    fetchApplications(token);
+})
+//modal delete for each record
+document.getElementById("deleteEdit").addEventListener("click",async ()=>{
+    const token=sessionStorage.getItem("user");
+    const id=document.getElementById("editId").value;
+    await fetch(`${CONFIG.API_BASE_URL}delete-record/${id}`,{
+        method:"DELETE",
+        headers:{"Authorization":`Bearer ${token}`}
+    });
+    document.getElementById("crudRow").classList.remove('active');
+    fetchApplications(token);
+
+})
 
 //------------------Functions------------------//\
 document.getElementById("logoutBtn").addEventListener("click", () => {

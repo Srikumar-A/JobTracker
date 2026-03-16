@@ -55,5 +55,31 @@
                 <p>Processing your emails...</p>
             </div>
         </div>
+        <!--Modal for CRUD-->
+        <div class="crud-row" id="crudRow">
+            <div class="edit-modal">
+                <h3>Edit the Application</h3>
+                <input type="hidden" id="editId">
+                <label>Company name</label>
+                <input type="text" id="editCompany">
+                <label>Role</label>
+                <input type="text" id="editRole">
+                <label>Status</label>
+                <select id="editStatus">
+                    <option value="Applied">Applied</option>
+                    <option value="Interview">Interview</option>
+                    <option value="Assessment">Assessment</option>
+                    <option value="Offer">Offer</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+                <div class="modal-actions">
+                    <button id="deleteEdit">Delete</button>
+                    <button id="cancelEdit">Cancel</button>
+                    <button id="saveEdit">Save</button>
+                    
+                </div>
+
+            </div>
+        </div>
     </body>
 </html>

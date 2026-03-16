@@ -377,3 +377,126 @@ body {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/*modal view*/
+.crud-row {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    z-index: 999;
+    justify-content: center;
+    align-items: center;
+}
+
+.crud-row.active {
+    display: flex;
+}
+
+.edit-modal {
+    background: #141416;
+    border: 1px solid #27272a;
+    border-radius: 14px;
+    padding: 2rem;
+    width: 380px;
+}
+
+.edit-modal h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    color: #e4e4e7;
+}
+
+.edit-modal label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #71717a;
+    margin-bottom: 0.4rem;
+}
+
+.edit-modal input,
+.edit-modal select {
+    width: 100%;
+    padding: 10px 12px;
+    background: #09090b;
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    color: #e4e4e7;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.edit-modal input:focus,
+.edit-modal select:focus {
+    border-color: #3b82f6;
+}
+
+.edit-modal select option {
+    background: #141416;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+}
+
+#cancelEdit {
+    padding: 8px 18px;
+    background: transparent;
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    color: #71717a;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#cancelEdit:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+#saveEdit {
+    padding: 8px 18px;
+    background: #3b82f6;
+    border: 1px solid #3b82f6;
+    border-radius: 8px;
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#saveEdit:hover {
+    background: #2563eb;
+}
+#deleteEdit {
+    padding: 8px 18px;
+    background: transparent;
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    color: #ef4444;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-right: auto;
+    transition: all 0.2s;
+}
+
+#deleteEdit:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+}

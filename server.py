@@ -17,7 +17,7 @@ from email.utils import parsedate_to_datetime
 #llm
 from openai import AsyncOpenAI
 import json
-
+from fastapi.responses import JSONResponse
 
 
 load_dotenv()
@@ -163,8 +163,14 @@ async def LLM_JobParser(sub,body):
         temperature=0,
         response_format={"type":"json_object"}
     )
+    content = resp.choices[0].message.content
+    content = re.sub(r"```json\s*|```", "", content).strip()
 
-    return json.loads(resp.choices[0].message.content)
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        print(f"LLM returned invalid JSON: {content[:200]}")
+        return {"company": "Unknown", "role": "Unknown", "status": "Unknown"}
 
 def extract_body(payload):
 
@@ -205,8 +211,39 @@ async def get_user_id(token)->str:
 async def get_applications(request:Request):
     token=request.headers.get("Authorization")
     user_id=await get_user_id(token)
-    my_jobs=db.table("job_applications").select("company","date","role","status").eq("user_id",user_id).execute()
+    my_jobs=db.table("job_applications").select("company","date","role","status","mail_id").eq("user_id",user_id).execute()
     return {"applications":my_jobs.data}
+
+
+# getting the update
+@app.put('/update-application/{mail_id}')
+async def update_application(mail_id:str,request:Request):
+    token=request.headers.get("Authorization")
+    user_id=await get_user_id(token)
+    if not user_id:
+        return JSONResponse({"error":"unauthorized"},status_code=401)
+    body=await request.json()
+    db.table("job_applications")\
+    .update(body)\
+    .eq("mail_id",mail_id)\
+    .eq("user_id",user_id)\
+    .execute()
+
+    return {"updated":True}
+#delete record
+@app.delete('/delete-record/{mail_id}')
+async def delete_application(mail_id:str,request:Request):
+    token=request.headers.get("Authorization")
+    user_id=await get_user_id(token)
+    if not user_id:
+        return JSONResponse({"error":"Unauthorized"},status_code=401)
+    db.table("job_applications")\
+    .delete()\
+    .eq("mail_id",mail_id)\
+    .eq("user_id",user_id)\
+    .execute()
+    return JSONResponse({"message":"Deleted Successfully"},status_code=204)
+
 
 @app.get("/process-applications")
 async def process_job_applications(request:Request):
@@ -328,7 +365,7 @@ async def process_job_applications(request:Request):
                 "company":part_record.get("company"),
                 "sender":sender,
                 "date":date,
-                "status":status_list[part_record.get("status",0)],
+                "status":status_list[status_dict.get(part_record.get("status"),0)],
                 "role":part_record.get("role"),
                 "user_id":user_id,
                 "mail_id":msg_id,
